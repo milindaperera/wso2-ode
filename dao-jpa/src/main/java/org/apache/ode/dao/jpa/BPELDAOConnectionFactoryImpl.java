@@ -73,6 +73,12 @@ public class BPELDAOConnectionFactoryImpl implements BpelDAOConnectionFactoryJDB
             Object delegate = bpelConn.getEntityManager().getDelegate();
             if (delegate instanceof EntityManagerImpl) {
             	EntityManagerImpl em = (EntityManagerImpl) delegate;
+            	if (!em.getTransaction().isActive()) {
+            	    __log.debug("[log2]EM transaction is not ACTIVE hence activating it");
+            	    //em.getTransaction().begin();
+                } else {
+                    __log.debug("[log2]EM transaction is ACTIVE");
+                }
                 __log.debug(" getting the delegate from entity manager");
                 em.beginStore();
                 Object conn = em.getConnection();
@@ -94,8 +100,10 @@ public class BPELDAOConnectionFactoryImpl implements BpelDAOConnectionFactoryJDB
     @SuppressWarnings("unchecked")
     public BpelDAOConnection getConnection() {
         if (_connections.get() != null) {
+            __log.debug("[log2]getConnection():ThreadLocal _connections not NULL | connection obj:" + _connections.get().hashCode() );
             return _connections.get();
         } else {
+            __log.debug("[log2]getConnection(): ThreadLocal _connections is NULL");
         	try {
 				if (this.isInTx()) {
 					HashMap propMap2 = new HashMap();
@@ -104,6 +112,7 @@ public class BPELDAOConnectionFactoryImpl implements BpelDAOConnectionFactoryJDB
 					em.getTransaction().begin();
 					BPELDAOConnectionImpl conn = createBPELDAOConnection(em);
 					_connections.set(conn);
+                    __log.debug("[log2]getConnection():ThreadLocal _connections set NEW Connection | connection obj:" + _connections.get().hashCode() );
 					_tm.getTransaction().registerSynchronization(
 							new Synchronization() {
 								// OpenJPA allows cross-transaction entity
@@ -121,7 +130,11 @@ public class BPELDAOConnectionFactoryImpl implements BpelDAOConnectionFactoryJDB
 											_connections.get().getEntityManager().getTransaction().rollback();
 											_connections.get().getEntityManager().close();
 											_connections.set(null);
-										}
+										} else {
+                                            if (__log.isDebugEnabled()) {
+                                                __log.debug("Completion status:" + i);
+                                            }
+                                        }
 									}
 								}
 								public void beforeCompletion() {

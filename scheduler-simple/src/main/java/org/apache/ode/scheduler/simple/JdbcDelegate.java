@@ -437,6 +437,7 @@ public class JdbcDelegate implements DatabaseDelegate {
         if(!hibernate)  {
             conn = BPELDAOConnectionFactoryImpl.getExistingJDBCConnection();
             if (conn == null) {
+                __log.debug("First Attempt for getExistingJDBCConnection() returned NULL");
                 BpelDAOConnectionFactory fac = getGlobalDAOConnFac();
                 if (fac != null) {
                     if (fac.getConnection() != null) {
@@ -457,10 +458,12 @@ public class JdbcDelegate implements DatabaseDelegate {
                 }
             }
             if (conn == null) {
+                __log.debug("Retrieving connection from datasource");
                 conn = _ds.getConnection();
             }
             DbIsolation.setIsolationLevel(conn);
         } else {
+            __log.debug("HIBERNATE Option");
             conn = _ds.getConnection();
             DbIsolation.setIsolationLevel(conn);
         }
